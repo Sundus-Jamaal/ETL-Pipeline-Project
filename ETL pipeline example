@@ -1,0 +1,106 @@
+import pandas as pd
+import sqlite3
+import logging
+import configparser
+from contextlib import closing
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Sample dataset simulating raw data with missing values and unclean data
+raw_data = {
+    'customer_id': [1, 2, 3, 4, 5, None],
+    'customer_name': ['John Doe', 'Jane Smith', 'Michael Brown', 'Emily Davis', None, 'Chris Green'],
+    'transaction_date': ['2024-01-10', '2024-01-12', '2024-01-15', None, '2024-01-20', '2024-01-22'],
+    'amount_spent': [150.75, None, 450.50, 300.00, 100.50, None],
+    'product_category': ['Electronics', 'Furniture', None, 'Clothing', 'Electronics', 'Furniture']
+}
+
+# Create a DataFrame simulating the raw data
+raw_df = pd.DataFrame(raw_data)
+
+# Step 1: Extract
+def extract():
+    logging.info("Extracting data...")
+    return raw_df
+
+# Step 2: Transform
+def transform(df):
+    logging.info("Transforming data...")
+
+    # Drop rows with missing customer_id
+    df = df.dropna(subset=['customer_id'])
+
+    # Fill missing 'amount_spent' with the mean value
+    df['amount_spent'] = df['amount_spent'].fillna(df['amount_spent'].mean())
+
+    # Fill missing 'product_category' with 'Unknown'
+    df['product_category'] = df['product_category'].fillna('Unknown')
+
+    # Fill missing transaction dates with a placeholder
+    df['transaction_date'] = df['transaction_date'].fillna('2024-01-01')
+
+    # Ensure transaction_date is in datetime format
+    df['transaction_date'] = pd.to_datetime(df['transaction_date'], errors='coerce')
+
+    # Remove duplicate rows
+    df = df.drop_duplicates()
+
+    # Remove leading and trailing spaces in string fields
+    df['customer_name'] = df['customer_name'].str.strip()
+    df['product_category'] = df['product_category'].str.strip().str.title()
+
+    # Detect and handle outliers in amount_spent using IQR method
+    q1 = df['amount_spent'].quantile(0.25)
+    q3 = df['amount_spent'].quantile(0.75)
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    df = df[(df['amount_spent'] >= lower_bound) & (df['amount_spent'] <= upper_bound)]
+
+    # Reset index after transformation
+    df = df.reset_index(drop=True)
+
+    # Validate the transformed data
+    if not validate_data(df):
+        logging.error("Data validation failed.")
+        return None
+
+    logging.info("Data transformation complete.")
+    return df
+
+def validate_data(df):
+    logging.info("Validating data...")
+    # Check for negative amounts
+    if any(df['amount_spent'] < 0):
+        logging.error("Validation Error: Negative amounts found.")
+        return False
+    # Additional validation checks can be added here
+    return True
+
+# Step 3: Load
+def load(df):
+    logging.info("Loading data into the database...")
+    try:
+        # Load database configuration from a config file
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        db_name = config['database']['db_name']
+
+        # Create an SQLite connection
+        with closing(sqlite3.connect(db_name)) as conn:
+            df.to_sql('transactions', conn, if_exists='replace', index=False)
+        logging.info("Data loaded successfully.")
+    except Exception as e:
+        logging.error(f"An error occurred while loading data: {e}")
+
+# ETL Pipeline Execution
+def etl_pipeline():
+    extracted_data = extract()
+
+    transformed_data = transform(extracted_data)
+    if transformed_data is not None:
+        load(transformed_data)
+
+if __name__ == "__main__":
+    etl_pipeline()
