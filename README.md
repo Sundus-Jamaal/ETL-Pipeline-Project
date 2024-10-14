@@ -80,14 +80,14 @@ def transform(df):
 ```
 
 **Functionality**: 
-
-Drop Rows: Removes rows with missing customer_id.
-Fill Missing Values: Fills missing amount_spent with the mean value, product_category with 'Unknown', and transaction dates with a placeholder.
-Remove Duplicates: Ensures each transaction is unique.
-Convert Data Types: Converts transaction_date to a datetime format for easier manipulation.
-Outlier Detection: Uses the Interquartile Range (IQR) method to identify and remove outliers in the amount_spent column.
-String Manipulation: Standardizes the case of customer_name to title case.
-Reset Index: Resets the index of the DataFrame after transformations.
+- Drop Rows: Removes rows with missing customer_id.
+- Fill Missing Values: 
+- Fills missing amount_spent with the mean value, product_category with 'Unknown', and transaction dates with a placeholder.
+- Remove Duplicates: Ensures each transaction is unique.
+- Convert Data Types: Converts transaction_date to a datetime format for easier manipulation.
+- Outlier Detection: Uses the Interquartile Range (IQR) method to identify and remove outliers in the amount_spent column.
+- String Manipulation: Standardizes the case of customer_name to title case.
+- Reset Index: Resets the index of the DataFrame after transformations.
 
 **Step 3: Load**
 Loads the cleaned data into an SQLite database.
@@ -102,9 +102,9 @@ def load(df):
 ```
 
   **Functionality**: 
-Creates an SQLite connection to etl_pipeline_project.db.
-Loads the cleaned DataFrame into a table named transactions.
-Closes the database connection after loading.
+- Creates an SQLite connection to etl_pipeline_project.db.
+- Loads the cleaned DataFrame into a table named transactions.
+- Closes the database connection after loading.
 
 **ETL Pipeline Execution**
 Coordinates the ETL process by calling the extract, transform, and load functions.
@@ -124,8 +124,8 @@ def etl_pipeline():
 ```
 
 **Functionality**: 
-Calls the extract(), transform(), and load() functions sequentially to execute the full ETL process.
-Logs a success message upon completion.
+- Calls the extract(), transform(), and load() functions sequentially to execute the full ETL process.
+- Logs a success message upon completion.
 
 **Main Execution Block**
 Executes the ETL pipeline when the script is run.
